@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Sales {
+  invoice_id     String   @id
+  sales_date     DateTime
+  sales_tot      Float
+  sales_discount Float
+  postage_cost   Float
+  bill_total     Float
+  sales_stat     String
+
+  details SalesDetail[]
+}
+
+model SalesDetail {
+  id         Int    @id @default(autoincrement())
+  invoice_id String
+  stock_id   String
+  nss        Int
+
+  sales Sales @relation(fields: [invoice_id], references: [invoice_id])
+}
+
+model Convection {
+  conv_id         Int    @id @default(autoincrement())
+  product_id      String @unique
+  product_name    String
+  depo_amount     Int
+  remaining_stock Int
+  product_status  String
+  cogs            Float
+}
+
+model Receivable {
+  id         Int      @id @default(autoincrement())
+  rcv_total  Float
+  rcv_notes  String
+  created_at DateTime
+}
+
+model DashboardSummaryMonthly {
+  id                Int      @id @default(autoincrement())
+  year              Int
+  month             Int
+  total_omset       Float
+  total_cogs        Float
+  gross_profit      Float
+  total_qty_sold    Int
+  paid_total        Float
+  unpaid_total      Float
+  receivable_total  Float
+  opening_stock     Int
+  remaining_stock   Int
+  on_progress_stock Int
+  last_updated      DateTime
+}
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  product_name  String
+  sku           String   @unique
+  selling_price Float
+  cogs          Float
+  stock         Int      @default(0)
+  created_at    DateTime @default(now())
+
+  saleDetails SaleDetail[]
+
+  stockMovements StockMovement[]
+
+  purchaseDetails PurchaseDetail[]
+}
+
+model Sale {
+  id             Int      @id @default(autoincrement())
+  invoice_no     String   @unique
+  customer_name  String
+  total_amount   Float
+  payment_status String
+  created_at     DateTime @default(now())
+
+  details SaleDetail[]
+}
+
+model SaleDetail {
+  id         Int   @id @default(autoincrement())
+  sale_id    Int
+  product_id Int
+  qty        Int
+  price      Float
+  subtotal   Float
+
+  sale Sale @relation(fields: [sale_id], references: [id])
+
+  product Product @relation(fields: [product_id], references: [id])
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  password   String
+  role       String   @default("ADMIN")
+  created_at DateTime @default(now())
+}
+
+model StockMovement {
+  id         Int      @id @default(autoincrement())
+
+  product_id Int
+
+  type       String
+
+  qty        Int
+
+  notes      String?
+
+  created_at DateTime @default(now())
+
+  product Product @relation(fields: [product_id], references: [id])
+}
+
+model Supplier {
+  id            Int      @id @default(autoincrement())
+
+  supplier_name String
+
+  phone         String?
+
+  address       String?
+
+  created_at    DateTime @default(now())
+
+  purchases Purchase[]
+}
+
+model Purchase {
+  id              Int      @id @default(autoincrement())
+
+  invoice_no      String   @unique
+
+  supplier_id     Int
+
+  total_amount    Float
+
+  payment_status  String
+
+  created_at      DateTime @default(now())
+
+  supplier Supplier @relation(fields: [supplier_id], references: [id])
+
+  details PurchaseDetail[]
+}
+
+model PurchaseDetail {
+  id          Int @id @default(autoincrement())
+
+  purchase_id Int
+
+  product_id  Int
+
+  qty         Int
+
+  cost_price  Float
+
+  subtotal    Float
+
+  purchase Purchase @relation(fields: [purchase_id], references: [id])
+
+  product Product @relation(fields: [product_id], references: [id])
+}
